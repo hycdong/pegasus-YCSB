@@ -30,6 +30,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.xiaomi.infra.pegasus.client.PegasusClientFactory;
 import com.xiaomi.infra.pegasus.client.PegasusClientInterface;
@@ -41,6 +43,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Concrete Pegasus client implementation.
@@ -119,7 +122,13 @@ public class PegasusClient extends DB {
   public Status insert(
       String table, String key, HashMap<String, ByteIterator> values) {
     try {
-      pegasusClient().set(table, key.getBytes(), null, toJson(values));
+      List<Pair<byte[], byte[]>> pairs = new ArrayList<Pair<byte[], byte[]>>();
+      for(int i = 0; i < 50; ++i){
+         String sortKey = new String("sortKey"+i);
+	 pairs.add(Pair.of(sortKey.getBytes(), toJson(values)));
+      }
+      pegasusClient().multiSet(table, key.getBytes(), pairs);
+      //pegasusClient().set(table, key.getBytes(), null, toJson(values));
       return Status.OK;
     } catch (Exception e) {
       logger.error("Error inserting value into table[" + table + "] with key: " + key, e);
